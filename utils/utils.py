@@ -6,8 +6,7 @@ import os
 import matplotlib.pyplot as plt
 
 
-from models.definitions.vgg_nets import Vgg16, Vgg19, Vgg16Experimental
-
+from models.definitions.vgg_nets import Vgg16, Vgg19, Vgg16Experimental, ResNet50
 
 IMAGENET_MEAN_255 = [123.675, 116.28, 103.53]
 IMAGENET_STD_NEUTRAL = [1, 1, 1]
@@ -115,6 +114,8 @@ def prepare_model(model, device):
             model = Vgg16(requires_grad=False, show_progress=True)
     elif model == 'vgg19':
         model = Vgg19(requires_grad=False, show_progress=True)
+    elif model == 'resnet':
+        model = ResNet50(requires_grad=False, show_progress=False)
     else:
         raise ValueError(f'{model} not supported.')
 

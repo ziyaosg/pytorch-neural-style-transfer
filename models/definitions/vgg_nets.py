@@ -216,3 +216,60 @@ class Vgg19(torch.nn.Module):
         vgg_outputs = namedtuple("VggOutputs", self.layer_names)
         out = vgg_outputs(layer1_1, layer2_1, layer3_1, layer4_1, conv4_2, layer5_1)
         return out
+
+
+class ResNet50(torch.nn.Module):
+    """
+    This class implements a pretrained ResNet50 model for image style transfer.
+    Similar to VGG19, specific layers are exposed for style and content representation.
+    """
+    def __init__(self, requires_grad=False, show_progress=False):
+        super().__init__()
+        resnet_pretrained_features = models.resnet50(pretrained=True, progress=show_progress)
+
+        # ResNet layers for style and content representation
+        self.layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5']
+        self.content_feature_maps_index = 4  # conv5
+        self.style_feature_maps_indices = [0, 1, 2, 3]  # conv1, conv2, conv3, conv4
+
+        # self.resnet_layers = torch.nn.Sequential(*list(resnet_pretrained_features.children())[:-2])
+
+        layer_idx = 4
+        pretrain_layers_list = list(resnet_pretrained_features.children())
+        self.slice1 = torch.nn.Sequential(*pretrain_layers_list[:4]) # conv1, bn1, relu, maxpool
+
+        self.slice2 = torch.nn.Sequential()
+        self.slice2.add_module(str(layer_idx), pretrain_layers_list[layer_idx])   # conv2_x
+        layer_idx += 1
+
+        self.slice3 = torch.nn.Sequential()
+        self.slice3.add_module(str(layer_idx), pretrain_layers_list[layer_idx]) # conv3_x
+        layer_idx += 1
+
+        self.slice4 = torch.nn.Sequential()
+        self.slice4.add_module(str(layer_idx), pretrain_layers_list[layer_idx])  # conv4_x
+        layer_idx += 1
+
+        self.slice5 = torch.nn.Sequential()
+        self.slice5.add_module(str(layer_idx), pretrain_layers_list[layer_idx])  # conv5_x
+
+        if not requires_grad:
+            for param in self.parameters():
+                param.requires_grad = False
+
+    def forward(self, x):
+
+        x = self.slice1(x)
+        conv1_out = x
+        x = self.slice2(x)
+        conv2_out = x
+        x = self.slice3(x)
+        conv3_out = x
+        x = self.slice4(x)
+        conv4_out = x
+        x = self.slice5(x)
+        conv5_out = x
+
+        resnet_outputs = namedtuple("ResnetOutputs", self.layer_names)
+        out = resnet_outputs(conv1_out, conv2_out, conv3_out, conv4_out, conv5_out)
+        return out

@@ -77,8 +77,8 @@ def neural_style_transfer(config):
     # compute output path
     style_name_combined = ''
     for name, weight in zip(style_image_list, style_blend_weights):
-        style_name_combined += name.split('.')[0] + '_' + str(weight)
-    out_dir_name = 'combined_' + os.path.split(content_img_path)[1].split('.')[0] + '_' + style_name_combined
+        style_name_combined += '_' + name.split('.')[0] + '_' + str(weight)
+    out_dir_name = 'combined_' + os.path.split(content_img_path)[1].split('.')[0] + style_name_combined
     dump_path = os.path.join(config['output_img_dir'], out_dir_name)
     os.makedirs(dump_path, exist_ok=True)
 
@@ -109,22 +109,45 @@ def neural_style_transfer(config):
         style_path = os.path.join(config['style_images_dir'], style_image_list[style_index])
         style_img_resized = utils.prepare_img(style_path, np.asarray(content_img.shape[2:]), device)
         init_img = style_img_resized
-
+    
     # we are tuning optimizing_img's pixels! (that's why requires_grad=True)
     optimizing_img = Variable(init_img, requires_grad=True)
 
     neural_net, content_feature_maps_index_name, style_feature_maps_indices_names = utils.prepare_model(config['model'], device)
-    print(f'Using {config["model"]} in the optimization procedure.')
 
-
+    # ---------- code below might need more drastic modification ----------
     content_img_set_of_feature_maps = neural_net(content_img)
-    style_img_set_of_feature_maps = list()
-    for img in style_imgs:
-        style_img_set_of_feature_maps.extend(neural_net(img))
+    style_img_set_of_feature_maps = [neural_net(img) for img in style_imgs]
 
+    
     target_content_representation = content_img_set_of_feature_maps[content_feature_maps_index_name[0]].squeeze(axis=0)
-    target_style_representation = [utils.gram_matrix(x) for cnt, x in enumerate(style_img_set_of_feature_maps) if cnt in style_feature_maps_indices_names[0]]
-    target_representations = [target_content_representation, target_style_representation]
+    
+    num_layers = len(style_feature_maps_indices_names[0])
+    target_style_representations = []
+
+    for style_features in style_img_set_of_feature_maps:
+        # compute and store the Gram matrix for each specified layer of this style image
+        for layer_index in style_feature_maps_indices_names[0]:
+            layer_feature_maps = style_features[layer_index]
+            gram_matrix = utils.gram_matrix(layer_feature_maps)
+            target_style_representations.append(gram_matrix)
+    
+    layer_wise_style_representations = [[] for _ in range(num_layers)]
+
+    # group Gram matrices by layer
+    for i, gram_matrix in enumerate(target_style_representations):
+        layer_index = i % num_layers
+        layer_wise_style_representations[layer_index].append(gram_matrix)
+
+    # blend Gram matrices layer-wise
+    blended_style_representations = []
+    for layer_reps in layer_wise_style_representations:
+        blended_rep = sum([weight * rep for weight, rep in zip(style_blend_weights, layer_reps)])
+        blended_style_representations.append(blended_rep)
+
+    target_representations = [target_content_representation, blended_style_representations]
+
+    # ---------- code above might need more drastic modification ----------
 
     # magic numbers in general are a big no no - some things in this code are left like this by design to avoid clutter
     num_of_iterations = {

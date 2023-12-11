@@ -1,3 +1,6 @@
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
+
 import utils.utils as utils
 from utils.video_utils import create_video_from_intermediate_results
 
@@ -48,17 +51,50 @@ def make_tuning_step(neural_net, optimizer, target_representations, content_feat
 
 def neural_style_transfer(config):
     content_img_path = os.path.join(config['content_images_dir'], config['content_img_name'])
-    style_img_path = os.path.join(config['style_images_dir'], config['style_img_name'])
+    # style_img_path = os.path.join(config['style_images_dir'], config['style_img_name'])
 
-    out_dir_name = 'combined_' + os.path.split(content_img_path)[1].split('.')[0] + '_' + os.path.split(style_img_path)[1].split('.')[0]
+    # validate --style_img_name
+    style_image_input = [i.strip() for i in config['style_img_name'].split(',')]
+    style_image_list = list()
+    ext = [".jpg", ".jpeg", ".png", ".tiff"]
+    for each_input in style_image_input:
+        assert(os.path.splitext(each_input)[1].lower() in ext), \
+            '{} is not a valid image file!'.format(each_input)
+        style_image_list.append(each_input)
+
+    # validate --style_blend_weights
+    if config['style_blend_weights'] is None:
+        style_blend_weights = [1] * len(style_image_input)
+    else:
+        style_blend_weights = [w.strip() for w in config['style_blend_weights'].split(',')]
+        assert(len(style_image_input) == len(style_blend_weights)), \
+            '--style_blend_weights and --style_img_name must have the same number of elements!'
+
+    # normalize the style blending weights so they sum to 1
+    style_blend_sum = sum(style_blend_weights)
+    style_blend_weights = [w / style_blend_sum for w in style_blend_weights]
+
+    # compute output path
+    style_name_combined = ''
+    for name, weight in zip(style_image_list, style_blend_weights):
+        style_name_combined += name.split('.')[0] + '_' + str(weight)
+    out_dir_name = 'combined_' + os.path.split(content_img_path)[1].split('.')[0] + '_' + style_name_combined
     dump_path = os.path.join(config['output_img_dir'], out_dir_name)
     os.makedirs(dump_path, exist_ok=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    content_img = utils.prepare_img(content_img_path, config['height'], device)
-    style_img = utils.prepare_img(style_img_path, config['height'], device)
 
+    # prepare content and style images
+    content_img = utils.prepare_img(content_img_path, config['height'], device)
+    # style_img = utils.prepare_img(style_img_path, config['height'], device)
+    style_imgs = list()
+    for img in style_image_list:
+        img_path = os.path.join(config['style_images_dir'], img)
+        style_imgs.append(utils.prepare_img(img_path, config['height'], device))
+
+
+    # initialization method
     if config['init_method'] == 'random':
         # white_noise_img = np.random.uniform(-90., 90., content_img.shape).astype(np.float32)
         gaussian_noise_img = np.random.normal(loc=0, scale=90., size=content_img.shape).astype(np.float32)
@@ -68,7 +104,10 @@ def neural_style_transfer(config):
     else:
         # init image has same dimension as content image - this is a hard constraint
         # feature maps need to be of same size for content image and init image
-        style_img_resized = utils.prepare_img(style_img_path, np.asarray(content_img.shape[2:]), device)
+        # style_img_resized = utils.prepare_img(style_img_path, np.asarray(content_img.shape[2:]), device)
+        style_index = config['init_style_index'] - 1
+        style_path = os.path.join(config['style_images_dir'], style_image_list[style_index])
+        style_img_resized = utils.prepare_img(style_path, np.asarray(content_img.shape[2:]), device)
         init_img = style_img_resized
 
     # we are tuning optimizing_img's pixels! (that's why requires_grad=True)
@@ -77,8 +116,11 @@ def neural_style_transfer(config):
     neural_net, content_feature_maps_index_name, style_feature_maps_indices_names = utils.prepare_model(config['model'], device)
     print(f'Using {config["model"]} in the optimization procedure.')
 
+
     content_img_set_of_feature_maps = neural_net(content_img)
-    style_img_set_of_feature_maps = neural_net(style_img)
+    style_img_set_of_feature_maps = list()
+    for img in style_imgs:
+        style_img_set_of_feature_maps.extend(neural_net(img))
 
     target_content_representation = content_img_set_of_feature_maps[content_feature_maps_index_name[0]].squeeze(axis=0)
     target_style_representation = [utils.gram_matrix(x) for cnt, x in enumerate(style_img_set_of_feature_maps) if cnt in style_feature_maps_indices_names[0]]
@@ -142,15 +184,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--content_img_name", type=str, help="content image name", default='figures.jpg')
     parser.add_argument("--style_img_name", type=str, help="style image name", default='vg_starry_night.jpg')
+    parser.add_argument("--style_blend_weights", default=None)
     parser.add_argument("--height", type=int, help="height of content and style images", default=400)
 
-    parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
-    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=3e4)
-    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
+    # parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
+    # parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=3e4)
+    parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=5e0)
+    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=1e2)
+    # parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
+    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e3)
 
     parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
     parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')
     parser.add_argument("--init_method", type=str, choices=['random', 'content', 'style'], default='content')
+    parser.add_argument("--init_style_index", type=int, help="choosing which style image as initialization (index starts with 1)", default=1)
     parser.add_argument("--saving_freq", type=int, help="saving frequency for intermediate images (-1 means only final)", default=-1)
     args = parser.parse_args()
 

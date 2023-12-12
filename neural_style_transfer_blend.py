@@ -66,7 +66,7 @@ def neural_style_transfer(config):
     if config['style_blend_weights'] is None:
         style_blend_weights = [1] * len(style_image_input)
     else:
-        style_blend_weights = [w.strip() for w in config['style_blend_weights'].split(',')]
+        style_blend_weights = [float(w.strip()) for w in config['style_blend_weights'].split(',')]
         assert(len(style_image_input) == len(style_blend_weights)), \
             '--style_blend_weights and --style_img_name must have the same number of elements!'
 
@@ -115,7 +115,7 @@ def neural_style_transfer(config):
 
     neural_net, content_feature_maps_index_name, style_feature_maps_indices_names = utils.prepare_model(config['model'], device)
 
-    # ---------- code below might need more drastic modification ----------
+    # ---------- below is the essential component to handle style blends ----------
     content_img_set_of_feature_maps = neural_net(content_img)
     style_img_set_of_feature_maps = [neural_net(img) for img in style_imgs]
 
@@ -146,8 +146,7 @@ def neural_style_transfer(config):
         blended_style_representations.append(blended_rep)
 
     target_representations = [target_content_representation, blended_style_representations]
-
-    # ---------- code above might need more drastic modification ----------
+    # ---------- above is the essential component to handle style blends ----------
 
     # magic numbers in general are a big no no - some things in this code are left like this by design to avoid clutter
     num_of_iterations = {
@@ -210,12 +209,9 @@ if __name__ == "__main__":
     parser.add_argument("--style_blend_weights", default=None)
     parser.add_argument("--height", type=int, help="height of content and style images", default=400)
 
-    # parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
-    # parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=3e4)
-    parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=5e0)
-    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=1e2)
-    # parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
-    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e3)
+    parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
+    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=1e4)
+    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e1)
 
     parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
     parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')

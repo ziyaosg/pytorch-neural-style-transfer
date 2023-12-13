@@ -106,9 +106,9 @@ def neural_style_transfer(config):
             with torch.no_grad():
                 print(f'Adam | iteration: {cnt:03}, total loss={total_loss.item():12.4f}, content_loss={config["content_weight"] * content_loss.item():12.4f}, style loss={config["style_weight"] * style_loss.item():12.4f}, tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
                 utils.save_and_maybe_display(optimizing_img, dump_path, config, cnt, num_of_iterations[config['optimizer']], should_display=False)
-                content_losses.append(content_loss.detach().numpy())
-                style_losses.append(style_loss.detach().numpy())
-                tv_losses.append(tv_loss.detach().numpy())
+                content_losses.append(content_loss.detach().cpu().numpy())
+                style_losses.append(style_loss.detach().cpu().numpy())
+                tv_losses.append(tv_loss.detach().cpu().numpy())
     elif config['optimizer'] == 'lbfgs':
         # line_search_fn does not seem to have significant impact on result
         optimizer = LBFGS((optimizing_img,), max_iter=num_of_iterations['lbfgs'], line_search_fn='strong_wolfe')
@@ -124,9 +124,9 @@ def neural_style_transfer(config):
             with torch.no_grad():
                 print(f'L-BFGS | iteration: {cnt:03}, total loss={total_loss.item():12.4f}, content_loss={config["content_weight"] * content_loss.item():12.4f}, style loss={config["style_weight"] * style_loss.item():12.4f}, tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
                 utils.save_and_maybe_display(optimizing_img, dump_path, config, cnt, num_of_iterations[config['optimizer']], should_display=False)
-                content_losses.append(content_loss.detach().numpy())
-                style_losses.append(style_loss.detach().numpy())
-                tv_losses.append(tv_loss.detach().numpy())
+                content_losses.append(content_loss.detach().cpu().numpy())
+                style_losses.append(style_loss.detach().cpu().numpy())
+                tv_losses.append(tv_loss.detach().cpu().numpy())
 
             cnt += 1
             return total_loss

@@ -1,3 +1,5 @@
+from matplotlib import pyplot as plt
+
 import utils.utils as utils
 from utils.video_utils import create_video_from_intermediate_results
 
@@ -93,6 +95,9 @@ def neural_style_transfer(config):
     #
     # Start of optimization procedure
     #
+    content_losses = []
+    style_losses = []
+    tv_losses = []
     if config['optimizer'] == 'adam':
         optimizer = Adam((optimizing_img,), lr=1e1)
         tuning_step = make_tuning_step(neural_net, optimizer, target_representations, content_feature_maps_index_name[0], style_feature_maps_indices_names[0], config)
@@ -101,6 +106,9 @@ def neural_style_transfer(config):
             with torch.no_grad():
                 print(f'Adam | iteration: {cnt:03}, total loss={total_loss.item():12.4f}, content_loss={config["content_weight"] * content_loss.item():12.4f}, style loss={config["style_weight"] * style_loss.item():12.4f}, tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
                 utils.save_and_maybe_display(optimizing_img, dump_path, config, cnt, num_of_iterations[config['optimizer']], should_display=False)
+                content_losses.append(content_loss.detach().numpy())
+                style_losses.append(style_loss.detach().numpy())
+                tv_losses.append(tv_loss.detach().numpy())
     elif config['optimizer'] == 'lbfgs':
         # line_search_fn does not seem to have significant impact on result
         optimizer = LBFGS((optimizing_img,), max_iter=num_of_iterations['lbfgs'], line_search_fn='strong_wolfe')
@@ -116,11 +124,41 @@ def neural_style_transfer(config):
             with torch.no_grad():
                 print(f'L-BFGS | iteration: {cnt:03}, total loss={total_loss.item():12.4f}, content_loss={config["content_weight"] * content_loss.item():12.4f}, style loss={config["style_weight"] * style_loss.item():12.4f}, tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
                 utils.save_and_maybe_display(optimizing_img, dump_path, config, cnt, num_of_iterations[config['optimizer']], should_display=False)
+                content_losses.append(content_loss.detach().numpy())
+                style_losses.append(style_loss.detach().numpy())
+                tv_losses.append(tv_loss.detach().numpy())
 
             cnt += 1
             return total_loss
 
         optimizer.step(closure)
+
+    # graph losses
+    content_losses_np = np.array(content_losses)
+    style_losses_np = np.array(style_losses)
+    tv_losses_np = np.array(tv_losses)
+
+    # Create an array for the x-axis (iterations)
+    iterations = np.arange(len(content_losses_np))
+
+    # Create the plot
+    plt.figure(figsize=(10, 5))
+    plt.plot(iterations, content_losses_np, label='Content Loss')
+    plt.plot(iterations, style_losses_np, label='Style Loss')
+    plt.plot(iterations, tv_losses_np, label='Total Variation Loss')
+
+    # Set the y-axis to log scale
+    plt.yscale('log')
+
+    # Add labels and title
+    plt.xlabel('Iterations')
+    plt.ylabel('Loss')
+    plt.title('Training Losses for Style Transfer Neural Network')
+    plt.legend()
+
+    # Show the plot
+    plot_file_name = f'training_{utils.generate_out_img_name(config)}'
+    plt.savefig(os.path.join(config['plots_dir'], plot_file_name))
 
     return dump_path
 
@@ -133,6 +171,7 @@ if __name__ == "__main__":
     content_images_dir = os.path.join(default_resource_dir, 'content-images')
     style_images_dir = os.path.join(default_resource_dir, 'style-images')
     output_img_dir = os.path.join(default_resource_dir, 'output-images')
+    plots_dir = os.path.join(default_resource_dir, 'plots')
     img_format = (4, '.jpg')  # saves images in the format: %04d.jpg
 
     #
@@ -149,7 +188,7 @@ if __name__ == "__main__":
     parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
 
     parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
-    parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19'], default='vgg19')
+    parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')
     parser.add_argument("--init_method", type=str, choices=['random', 'content', 'style'], default='content')
     parser.add_argument("--saving_freq", type=int, help="saving frequency for intermediate images (-1 means only final)", default=-1)
     args = parser.parse_args()
@@ -173,6 +212,7 @@ if __name__ == "__main__":
     optimization_config['style_images_dir'] = style_images_dir
     optimization_config['output_img_dir'] = output_img_dir
     optimization_config['img_format'] = img_format
+    optimization_config['plots_dir'] = plots_dir
 
     # original NST (Neural Style Transfer) algorithm (Gatys et al.)
     results_path = neural_style_transfer(optimization_config)

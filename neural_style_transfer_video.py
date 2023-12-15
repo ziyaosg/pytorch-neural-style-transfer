@@ -1,8 +1,16 @@
 import os
 import cv2 
 import glob
+import shutil
 import natsort
 import argparse
+from neural_style_transfer_blend import neural_style_transfer
+
+
+FRMAES_PER_SEC = 24
+FRAME_WIDTH = 360
+FRAME_HEIGHT = 640
+ITERATIONS = 350
 
 
 def frame_capture(input_path, output_dir): 
@@ -18,33 +26,53 @@ def frame_capture(input_path, output_dir):
         count += 1
     
     vidObj.release()
-        
+    
 
-def frame_putback(frames_dir, output_dir, output_name):
-    os.makedirs(output_dir, exist_ok=True)
-    output_video_path = os.path.join(output_dir, output_name)
+def frame_putback(frames_dir, video_dir, video_name):
+    os.makedirs(video_dir, exist_ok=True)
+    if not video_name.lower().endswith('mp4'):
+        video_name += '.mp4'
+    output_video_path = os.path.join(video_dir, video_name)
     
     # define the codec and create VideoWriter object 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    frame_width, frame_height = 1080, 1920
-    video_writer = cv2.VideoWriter(output_video_path, fourcc, 24.0, (frame_width, frame_height))
+    video_writer = cv2.VideoWriter(output_video_path, fourcc, FRMAES_PER_SEC, (FRAME_WIDTH, FRAME_HEIGHT))
 
     extension = '*.jpg'
     frame_paths = glob.glob(os.path.join(frames_dir, extension))
-    frame_paths = natsort.natsorted(frame_paths, reverse=True)
-
+    frame_paths = natsort.natsorted(frame_paths)
 
     for frame_path in frame_paths:
-        
         frame = cv2.imread(frame_path)
-        frame_resized = cv2.resize(frame, (frame_width, frame_height))
+        frame_resized = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
         video_writer.write(frame_resized)
 
     # release when job is finished
     video_writer.release()
 
 
-# Driver Code 
+def video_transfer(config):
+    os.makedirs(config['transferred_frames_dir'], exist_ok=True) 
+
+    count = 0
+    extension = '*.jpg'
+    frame_paths = glob.glob(os.path.join(config['content_frame_dir'], extension))
+    frame_paths = natsort.natsorted(frame_paths)
+    for frame_path in frame_paths:
+        config['content_img_name'] = os.path.split(frame_path)[-1]
+
+        print("now transferring frame: ", config['content_img_name'])
+        dump_path = neural_style_transfer(config, lbfgs_iterations=ITERATIONS)
+
+
+        copy_source = os.path.join(dump_path, config['transferred_frame_name'] + config['img_format'][1])
+        copy_dest = os.path.join(config['transferred_frames_dir'], config['transferred_frame_name'] + '_' + str(count) + config['img_format'][1])
+        shutil.copyfile(copy_source, copy_dest)
+        video_name = os.path.split(dump_path)[-1]
+        count += 1
+    return video_name
+
+
 if __name__ == '__main__': 
 
     # fixed args
@@ -52,7 +80,8 @@ if __name__ == '__main__':
     # for videos
     content_video_dir = os.path.join(default_resource_dir, 'content-videos')
     default_frame_dir = os.path.join(default_resource_dir, 'content-frames')
-    default_transferred_dir = os.path.join(default_resource_dir, 'transferred-videos')
+    default_trans_frame_dir = os.path.join(default_resource_dir, 'transferred-frames')
+    default_trans_vid_dir = os.path.join(default_resource_dir, 'transferred-videos')
     # for images
     # content_images_dir = os.path.join(default_resource_dir, 'content-images')
     style_images_dir = os.path.join(default_resource_dir, 'style-images')
@@ -64,8 +93,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # for videos
     parser.add_argument("--content_video_name", type=str, help="content video name", default='test.mov')
-    parser.add_argument("--frame_dir", type=str, help="output video frames directory", default=default_frame_dir)
-    parser.add_argument("--transferred_video_dir", type=str, help="transferred video output directory", default=default_transferred_dir)
+    #for images
+    # parser.add_argument("--content_img_name", type=str, help="content image name", default='figures.jpg')
+    parser.add_argument("--style_img_name", type=str, help="style image name", default='vg_starry_night.jpg')
+    parser.add_argument("--height", type=int, help="height of content and style images", default=640)
+
+    parser.add_argument("--style_blend_weights", default=None)
+    parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
+    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=3e4)
+    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e1)
+
+    parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
+    parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')
+    parser.add_argument("--init_method", type=str, choices=['random', 'content', 'style'], default='content')
+    parser.add_argument("--init_style_index", type=int, help="choosing which style image as initialization (index starts with 1)", default=1)
+    parser.add_argument("--saving_freq", type=int, help="saving frequency for intermediate images (-1 means only final)", default=-1)
     args = parser.parse_args()
     
 
@@ -75,8 +117,19 @@ if __name__ == '__main__':
         config[arg] = getattr(args, arg)
     # for video
     config['content_video_path'] = os.path.join(content_video_dir, config['content_video_name'])
+    config['content_frame_dir'] = default_frame_dir
+    config['transferred_frames_dir'] = default_trans_frame_dir
+    config['transferred_video_dir'] = default_trans_vid_dir
+    config['transferred_frame_name'] = config['model'] + '_' + str(ITERATIONS-1).zfill(img_format[0])
+    # for images
+    # config['content_images_dir'] = content_images_dir
+    config['content_images_dir'] = config['content_frame_dir']
+    config['style_images_dir'] = style_images_dir
+    config['output_img_dir'] = output_img_dir
+    config['img_format'] = img_format
     
 
     # helper functions
-    frame_capture(config['content_video_path'], config['frame_dir']) 
-    frame_putback(config['frame_dir'], config['transferred_video_dir'], 'output_video.mp4')
+    frame_capture(config['content_video_path'], config['content_frame_dir']) 
+    video_name = video_transfer(config)
+    frame_putback(config['transferred_frames_dir'], config['transferred_video_dir'], video_name)

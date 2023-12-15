@@ -17,7 +17,7 @@ def gather_content_images(content_path):
 
     return images
 
-def gather_styles(styles_path: str, style_prefixes = ['picasso', 'pollock', 'van-gogh']):
+def gather_styles(styles_path: str, style_prefixes = ['picasso', 'pollock', 'van-gogh', 'miscellaneous']):
     """
     Given a directory path to the styles' directory and a list of style prefixes, collect
     all images from that directory which correspond to the given styles
@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
     parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=1e4)
-    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e1)
+    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
 
     parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
     parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')
@@ -108,23 +108,24 @@ if __name__ == '__main__':
     # results_path = neural_style_transfer(optimization_config)
     style_images = gather_styles(style_images_dir)
     content_images = gather_content_images(content_images_dir)
-
+    print(f"Styles: {style_images}")
+    print(f"Contents: {content_images}")
     optimization_config['saving_freq'] = -1
-    for style, image_names in style_images.items():
-        optimization_config['style_img_name'] = ','.join(image_names)
-        for content in content_images:
-            optimization_config['content_img_name'] = content
+    for content in content_images:
+        optimization_config['content_img_name'] = content
+        for style, image_names in style_images.items():
+            optimization_config['style_img_name'] = ','.join(image_names)
             # VGGs
-            set_weights(optimization_config, (1e5, 3e4, 1e0))
+            set_weights(optimization_config, (1e5, 1e4, 1e0))
             optimization_config['model'] = 'vgg16'
-            print(f"content = {content_images}, style = {style}, model = {optimization_config['model']}")
+            print(f"content = {content}, style = {style}, model = {optimization_config['model']}")
             neural_style_transfer(optimization_config, NUM_ITERATIONS)
             optimization_config['model'] = 'vgg19'
-            print(f"content = {content_images}, style = {style}, model = {optimization_config['model']}")
+            print(f"content = {content}, style = {style}, model = {optimization_config['model']}")
             neural_style_transfer(optimization_config, NUM_ITERATIONS)
             # ResNet
             set_weights(optimization_config, (100.0, 1000.0, 10.0))
             optimization_config['model'] = 'resnet'
-            print(f"content = {content_images}, style = {style}, model = {optimization_config['model']}")
+            print(f"content = {content}, style = {style}, model = {optimization_config['model']}")
             neural_style_transfer(optimization_config, NUM_ITERATIONS)
 

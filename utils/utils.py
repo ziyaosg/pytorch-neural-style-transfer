@@ -79,9 +79,12 @@ def save_and_maybe_display(optimizing_img, dump_path, config, img_id, num_of_ite
     if img_id == num_of_iterations-1 or (saving_freq > 0 and img_id % saving_freq == 0):
         img_format = config['img_format']
         out_img_name = str(img_id).zfill(img_format[0]) + img_format[1] if saving_freq != -1 else generate_out_img_name(config)
+        out_img_name = config['model'] + '_' + out_img_name
         dump_img = np.copy(out_img)
         dump_img += np.array(IMAGENET_MEAN_255).reshape((1, 1, 3))
         dump_img = np.clip(dump_img, 0, 255).astype('uint8')
+        if len(out_img_name) > 255:
+            out_img_name = out_img_name[:50] + config["img_format"][1]
         cv.imwrite(os.path.join(dump_path, out_img_name), dump_img[:, :, ::-1])
 
     if should_display:

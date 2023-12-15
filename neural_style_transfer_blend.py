@@ -49,7 +49,7 @@ def make_tuning_step(neural_net, optimizer, target_representations, content_feat
     return tuning_step
 
 
-def neural_style_transfer(config):
+def neural_style_transfer(config, lbfgs_iterations = 1000):
     content_img_path = os.path.join(config['content_images_dir'], config['content_img_name'])
     # style_img_path = os.path.join(config['style_images_dir'], config['style_img_name'])
 
@@ -79,6 +79,7 @@ def neural_style_transfer(config):
     for name, weight in zip(style_image_list, style_blend_weights):
         style_name_combined += '_' + name.split('.')[0] + '_' + str(weight)
     out_dir_name = 'combined_' + os.path.split(content_img_path)[1].split('.')[0] + style_name_combined
+    out_dir_name = out_dir_name[:50]
     dump_path = os.path.join(config['output_img_dir'], out_dir_name)
     os.makedirs(dump_path, exist_ok=True)
 
@@ -150,7 +151,7 @@ def neural_style_transfer(config):
 
     # magic numbers in general are a big no no - some things in this code are left like this by design to avoid clutter
     num_of_iterations = {
-        "lbfgs": 1000,
+        "lbfgs": lbfgs_iterations,
         "adam": 3000,
     }
 

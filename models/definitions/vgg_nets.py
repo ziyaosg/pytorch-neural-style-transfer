@@ -223,14 +223,16 @@ class ResNet50(torch.nn.Module):
     This class implements a pretrained ResNet50 model for image style transfer.
     Similar to VGG19, specific layers are exposed for style and content representation.
     """
-    def __init__(self, requires_grad=False, show_progress=False):
+    def __init__(self, requires_grad=False, show_progress=False, content_feature_map_index = 4):
         super().__init__()
+        assert 0 <= content_feature_map_index <= 4
         resnet_pretrained_features = models.resnet50(pretrained=True, progress=show_progress)
 
         # ResNet layers for style and content representation
         self.layer_names = ['conv1', 'conv2', 'conv3', 'conv4', 'conv5']
-        self.content_feature_maps_index = 4  # conv5
-        self.style_feature_maps_indices = [0, 1, 2, 3]  # conv1, conv2, conv3, conv4
+        self.content_feature_maps_index = content_feature_map_index  # conv5 for 4
+        self.style_feature_maps_indices = [0, 1, 2, 3, 4]  # conv1, conv2, conv3, conv4
+        self.style_feature_maps_indices.remove(self.content_feature_maps_index)
 
         # self.resnet_layers = torch.nn.Sequential(*list(resnet_pretrained_features.children())[:-2])
 

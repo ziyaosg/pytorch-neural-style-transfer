@@ -60,6 +60,8 @@ def save_image(img, img_path):
 
 def generate_out_img_name(config):
     prefix = os.path.basename(config['content_img_name']).split('.')[0] + '_' + os.path.basename(config['style_img_name']).split('.')[0]
+    if 'disambiguater' in config:
+        prefix = config['disambiguater'] + '_' + prefix
     # called from the reconstruction script
     if 'reconstruct_script' in config:
         suffix = f'_o_{config["optimizer"]}_h_{str(config["height"])}_m_{config["model"]}{config["img_format"][1]}'
@@ -141,3 +143,10 @@ def gram_matrix(x, should_normalize=True):
 def total_variation(y):
     return torch.sum(torch.abs(y[:, :, :, :-1] - y[:, :, :, 1:])) + \
            torch.sum(torch.abs(y[:, :, :-1, :] - y[:, :, 1:, :]))
+
+def normalize_loss_weights(config):
+    weight_sum = config['content_weight'] + config['style_weight'] + config['tv_weight']
+    assert weight_sum > 0
+    config['content_weight'] = config['content_weight'] / weight_sum
+    config['style_weight'] = config['style_weight'] / weight_sum
+    config['tv_weight'] = config['tv_weight'] / weight_sum

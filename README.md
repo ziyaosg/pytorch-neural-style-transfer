@@ -1,6 +1,6 @@
 ## Image Style Transfer Using CNNs
 
-*Team members: Duncan Du, Isha Sighn, Ziyao Shangguan*
+*Team members: Duncan Du, Isha Singh, Ziyao Shangguan*
 
 This is the code repo for the Image Style Transfer Using CNNs project completed for the
 Computer Vision course at Yale University. It contains Pytorch implementations of VGG16, VGG19,

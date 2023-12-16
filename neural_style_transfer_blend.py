@@ -10,6 +10,7 @@ from torch.autograd import Variable
 import numpy as np
 import os
 import argparse
+from matplotlib import pyplot as plt
 
 
 def build_loss(neural_net, optimizing_img, target_representations, content_feature_maps_index, style_feature_maps_indices, config):
@@ -158,6 +159,9 @@ def neural_style_transfer(config, lbfgs_iterations = 1000):
     #
     # Start of optimization procedure
     #
+    content_losses = []
+    style_losses = []
+    tv_losses = []
     if config['optimizer'] == 'adam':
         optimizer = Adam((optimizing_img,), lr=1e1)
         tuning_step = make_tuning_step(neural_net, optimizer, target_representations, content_feature_maps_index_name[0], style_feature_maps_indices_names[0], config)
@@ -181,11 +185,42 @@ def neural_style_transfer(config, lbfgs_iterations = 1000):
             with torch.no_grad():
                 print(f'L-BFGS | iteration: {cnt:03}, total loss={total_loss.item():12.4f}, content_loss={config["content_weight"] * content_loss.item():12.4f}, style loss={config["style_weight"] * style_loss.item():12.4f}, tv loss={config["tv_weight"] * tv_loss.item():12.4f}')
                 utils.save_and_maybe_display(optimizing_img, dump_path, config, cnt, num_of_iterations[config['optimizer']], should_display=False)
+                content_losses.append(content_loss.detach().cpu().numpy())
+                style_losses.append(style_loss.detach().cpu().numpy())
+                tv_losses.append(tv_loss.detach().cpu().numpy())
 
             cnt += 1
             return total_loss
 
         optimizer.step(closure)
+
+        # graph losses
+        content_losses_np = np.array(content_losses)
+        style_losses_np = np.array(style_losses)
+        tv_losses_np = np.array(tv_losses)
+
+        # Create an array for the x-axis (iterations)
+        iterations = np.arange(len(content_losses_np))
+
+        # Create the plot
+        plt.figure(figsize=(10, 5))
+        plt.plot(iterations, content_losses_np, label='Content Loss')
+        plt.plot(iterations, style_losses_np, label='Style Loss')
+        plt.plot(iterations, tv_losses_np, label='Total Variation Loss')
+
+        # Set the y-axis to log scale
+        plt.yscale('log')
+
+        # Add labels and title
+        plt.xlabel('Iterations')
+        plt.ylabel('Loss')
+        plt.title('Training Losses for Style Transfer Neural Network')
+        plt.legend()
+
+        # Show the plot
+        plot_file_name = f'training_{utils.generate_out_img_name(config)}'
+        plt.savefig(os.path.join(config['plots_dir'], plot_file_name))
+        plt.close()
 
     return dump_path
 
@@ -198,6 +233,7 @@ if __name__ == "__main__":
     content_images_dir = os.path.join(default_resource_dir, 'content-images')
     style_images_dir = os.path.join(default_resource_dir, 'style-images')
     output_img_dir = os.path.join(default_resource_dir, 'output-images')
+    plots_dir = os.path.join(default_resource_dir, 'plots')
     img_format = (4, '.jpg')  # saves images in the format: %04d.jpg
 
     #
@@ -240,6 +276,7 @@ if __name__ == "__main__":
     optimization_config['style_images_dir'] = style_images_dir
     optimization_config['output_img_dir'] = output_img_dir
     optimization_config['img_format'] = img_format
+    optimization_config['plots_dir'] = plots_dir
 
     # original NST (Neural Style Transfer) algorithm (Gatys et al.)
     results_path = neural_style_transfer(optimization_config)

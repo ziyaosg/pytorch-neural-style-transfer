@@ -223,7 +223,7 @@ class ResNet50(torch.nn.Module):
     This class implements a pretrained ResNet50 model for image style transfer.
     Similar to VGG19, specific layers are exposed for style and content representation.
     """
-    def __init__(self, requires_grad=False, show_progress=False, content_feature_map_index = 4):
+    def __init__(self, requires_grad=False, show_progress=False, content_feature_map_index = 2):
         super().__init__()
         assert 0 <= content_feature_map_index <= 4
         resnet_pretrained_features = models.resnet50(pretrained=True, progress=show_progress)

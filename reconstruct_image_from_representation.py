@@ -160,7 +160,7 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, help="width of content and style images (-1 keep original)", default=500)
 
     parser.add_argument("--saving_freq", type=int, help="saving frequency for intermediate images (-1 means only final)", default=1)
-    parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19'], default='vgg19')
+    parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')
     parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
     parser.add_argument("--reconstruct_script", type=str, help='dummy param - used in saving func', default=True)
     args = parser.parse_args()

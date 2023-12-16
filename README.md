@@ -2,6 +2,15 @@
 
 *Team members: Duncan Du, Isha Singh, Ziyao Shangguan*
 
+<p align="center">
+<img src="data/output-images/blended/combined_duncan_van-gogh_starry_night_full_0.5_van/vgg19_duncan_van-gogh_starry_night_full_o_lbfgs_i_content_h_400_m_vgg19_cw_100000.0_sw_10000.0_tv_1.0.jpg" width="200" 
+     height="300">
+<img src="data/output-images/blended/combined_isha_van-gogh_starry_night_full_0.5_van-g/vgg19_isha_van-gogh_starry_night_full_o_lbfgs_i_content_h_400_m_vgg19_cw_100000.0_sw_10000.0_tv_1.0.jpg" width="200" 
+     height="300">
+<img src="data/output-images/blended/combined_ziyao_van-gogh_starry_night_full_0.5_van-/vgg19_ziyao_van-gogh_starry_night_full_o_lbfgs_i_content_h_400_m_vgg19_cw_100000.0_sw_10000.0_tv_1.0.jpg" width="300" 
+     height="300">
+</p>
+
 This is the code repo for the Image Style Transfer Using CNNs project completed for the
 Computer Vision course at Yale University. It contains Pytorch implementations of VGG16, VGG19,
 and ResNet50 for neural style transfer. Theoretical foundations of this work are based on 

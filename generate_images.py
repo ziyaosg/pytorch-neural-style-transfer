@@ -110,7 +110,6 @@ if __name__ == '__main__':
     # results_path = neural_style_transfer(optimization_config)
     style_images = gather_styles(style_images_dir)
     content_images = gather_content_images(content_images_dir)
-    content_images = ['ziyao.jpg', 'dartmoth.jpg', 'snows.jpg']
     print(f"Styles: {style_images}")
     print(f"Contents: {content_images}")
     optimization_config['saving_freq'] = -1

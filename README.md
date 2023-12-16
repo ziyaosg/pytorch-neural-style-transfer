@@ -77,7 +77,7 @@ You can also generate style-transferred videos! Put your video file (in .mov for
 and run the following command, replacing video and image names with your custom files.
 
 ~~~shell
-python neural_style_transfer_video.py --content_img_name YOUR_CONTENT_VIDEO.jpg --style_img_name YOUR_STYLE_IMAGE1.jpg,YOUR_STYLE_IMAGE2.jpg
+python neural_style_transfer_video.py --content_img_name YOUR_CONTENT_VIDEO.mp4 --style_img_name YOUR_STYLE_IMAGE1.jpg,YOUR_STYLE_IMAGE2.jpg
 ~~~
 
 The default model and model choices are identical to image style transfers.

@@ -58,6 +58,7 @@ if __name__ == '__main__':
     content_images_dir = os.path.join(default_resource_dir, 'content-images')
     style_images_dir = os.path.join(default_resource_dir, 'style-images')
     output_img_dir = os.path.join(default_resource_dir, 'output-images', 'blended')
+    plots_dir = os.path.join(default_resource_dir, 'plots')
     img_format = (4, '.jpg')  # saves images in the format: %04d.jpg
 
     #
@@ -102,12 +103,14 @@ if __name__ == '__main__':
     optimization_config['style_images_dir'] = style_images_dir
     optimization_config['output_img_dir'] = output_img_dir
     optimization_config['img_format'] = img_format
+    optimization_config['plots_dir'] = plots_dir
 
     # original NST (Neural Style Transfer) algorithm (Gatys et al.)
 
     # results_path = neural_style_transfer(optimization_config)
     style_images = gather_styles(style_images_dir)
     content_images = gather_content_images(content_images_dir)
+    content_images = ['ziyao.jpg', 'dartmoth.jpg', 'snows.jpg']
     print(f"Styles: {style_images}")
     print(f"Contents: {content_images}")
     optimization_config['saving_freq'] = -1

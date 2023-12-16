@@ -10,7 +10,7 @@ from neural_style_transfer_blend import neural_style_transfer
 FRMAES_PER_SEC = 24
 FRAME_WIDTH = 360
 FRAME_HEIGHT = 640
-ITERATIONS = 350
+ITERATIONS = 700
 
 
 def frame_capture(input_path, output_dir): 
@@ -83,7 +83,6 @@ if __name__ == '__main__':
     default_trans_frame_dir = os.path.join(default_resource_dir, 'transferred-frames')
     default_trans_vid_dir = os.path.join(default_resource_dir, 'transferred-videos')
     # for images
-    # content_images_dir = os.path.join(default_resource_dir, 'content-images')
     style_images_dir = os.path.join(default_resource_dir, 'style-images')
     output_img_dir = os.path.join(default_resource_dir, 'output-images')
     img_format = (4, '.jpg')  # saves images in the format: %04d.jpg
@@ -94,20 +93,19 @@ if __name__ == '__main__':
     # for videos
     parser.add_argument("--content_video_name", type=str, help="content video name", default='test.mov')
     #for images
-    # parser.add_argument("--content_img_name", type=str, help="content image name", default='figures.jpg')
-    parser.add_argument("--style_img_name", type=str, help="style image name", default='vg_starry_night.jpg')
-    parser.add_argument("--height", type=int, help="height of content and style images", default=640)
+    parser.add_argument("--style_img_name", type=str, help="style image name", default='miscellaneous_1.jpg,miscellaneous_3.jpg')
+    parser.add_argument("--height", type=int, help="height of content and style images", default=500)
 
     parser.add_argument("--style_blend_weights", default=None)
     parser.add_argument("--content_weight", type=float, help="weight factor for content loss", default=1e5)
-    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=3e4)
-    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e1)
+    parser.add_argument("--style_weight", type=float, help="weight factor for style loss", default=5e4)
+    parser.add_argument("--tv_weight", type=float, help="weight factor for total variation loss", default=1e0)
 
     parser.add_argument("--optimizer", type=str, choices=['lbfgs', 'adam'], default='lbfgs')
     parser.add_argument("--model", type=str, choices=['vgg16', 'vgg19', 'resnet'], default='vgg19')
     parser.add_argument("--init_method", type=str, choices=['random', 'content', 'style'], default='content')
     parser.add_argument("--init_style_index", type=int, help="choosing which style image as initialization (index starts with 1)", default=1)
-    parser.add_argument("--saving_freq", type=int, help="saving frequency for intermediate images (-1 means only final)", default=-1)
+    parser.add_argument("--saving_freq", type=int, help="saving frequency for intermediate images (-1 means only final)", default=50)
     args = parser.parse_args()
     
 
@@ -120,9 +118,8 @@ if __name__ == '__main__':
     config['content_frame_dir'] = default_frame_dir
     config['transferred_frames_dir'] = default_trans_frame_dir
     config['transferred_video_dir'] = default_trans_vid_dir
-    config['transferred_frame_name'] = config['model'] + '_' + str(ITERATIONS-1).zfill(img_format[0])
+    config['transferred_frame_name'] = config['model'] + '_' + str(ITERATIONS).zfill(img_format[0])
     # for images
-    # config['content_images_dir'] = content_images_dir
     config['content_images_dir'] = config['content_frame_dir']
     config['style_images_dir'] = style_images_dir
     config['output_img_dir'] = output_img_dir

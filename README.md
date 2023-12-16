@@ -68,7 +68,7 @@ If you wish to run our style transfer on custom images, make sure that the conte
 the image names with your custom images:
 
 ~~~shell
-python neural_style_transfer_blend.py --content_img_name YOUR_CONTENT_IMAGE.jpg --style_img_name YOUR_STYLE_IMAGE1.jpg,YOUR_STYLE_IMAGE2.jpg
+python neural_style_transfer_blend.py --content_img_name YOUR_CONTENT_IMAGE.jpg --style_img_name YOUR_STYLE_IMAGE1.jpg,YOUR_STYLE_IMAGE2.jpg --style_blend_weights YOUR_STYLE_WEIGHT1,YOUR_STYLE_WEIGHT2 --saving_freq SAVE_ONE_PER_MANY_ITER
 ~~~
 The default model is VGG19, but you can use the --model parameter to choose between ['vgg16', 'vgg19', and 'resnet'].
 
@@ -77,7 +77,7 @@ You can also generate style-transferred videos! Put your video file (in .mov for
 and run the following command, replacing video and image names with your custom files.
 
 ~~~shell
-python neural_style_transfer_video.py --content_img_name YOUR_CONTENT_VIDEO.mp4 --style_img_name YOUR_STYLE_IMAGE1.jpg,YOUR_STYLE_IMAGE2.jpg
+python neural_style_transfer_video.py --content_img_name YOUR_CONTENT_VIDEO.mp4 --style_img_name YOUR_STYLE_IMAGE1.jpg,YOUR_STYLE_IMAGE2.jpg --style_blend_weights YOUR_STYLE_WEIGHT1,YOUR_STYLE_WEIGHT2 --saving_freq SAVE_ONE_PER_MANY_ITER
 ~~~
 
 The default model and model choices are identical to image style transfers.

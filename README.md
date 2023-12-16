@@ -59,7 +59,7 @@ directory against miscellaneous_1.jpg, miscellaneous_3.jpg with 1:1 weights in t
 python neural_style_transfer_video.py
 ~~~
 
-We have already ran this program and the result can be found in [data/transferred-videos](data/transferred-videos)
+We have already ran this program and the transferred frames can be found in [data/example-transferred-frames](data/example-transferred-frames) and the transferred video can be found in [data/transferred-videos](data/transferred-videos)
 
 ### Running blended style transfer on custom images
 If you wish to run our style transfer on custom images, make sure that the content image is in the

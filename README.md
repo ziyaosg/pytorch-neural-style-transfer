@@ -37,7 +37,7 @@ you can follow the below instructions:
 2. Run `conda env create` (while in project directory)
 3. Run `activate pytorch-nst`
 
-### "1-Click" Run
+### "1-Click" Run - Image Style Blends
 **Note: this command takes about 1-2 hours to run with GPU.**
 
 To generate blended style-transferred images from all images in the [data/content-images](data/content-images)
@@ -48,6 +48,18 @@ python generate_images.py
 ~~~
 
 We have already ran this program and the results can be found in [data/output-images/blended](data/output-images/blended)
+
+### "1-Click" Run - Video Style Blends
+**Note: this command takes about 1-2 hours to run with GPU.**
+
+To generate blended style-transferred videos from test.mov in the [data/content-videos](data/content-videos)
+directory against miscellaneous_1.jpg, miscellaneous_3.jpg with 1:1 weights in the [data/style-images](data/style-images) directory, run the following command:
+
+~~~shell
+python neural_style_transfer_video.py
+~~~
+
+We have already ran this program and the result can be found in [data/transferred-videos](data/transferred-videos)
 
 ### Running blended style transfer on custom images
 If you wish to run our style transfer on custom images, make sure that the content image is in the
